@@ -119,9 +119,12 @@ def generate_images(
     for seed_idx, seed in enumerate(seeds):
         print('Generating image for seed %d (%d/%d) ...' % (seed, seed_idx, len(seeds)))
         z = torch.from_numpy(np.random.RandomState(seed).randn(1, G.z_dim)).to(device)
+        w_samples = G.mapping(z.to(device), None).cpu().numpy().astype(np.float32)  # [N, L, C]
+        #w_samples = w_samples[:, :1, :].cpu().numpy().astype(np.float32)       # [N, 1, C]
         img = G(z, label, truncation_psi=truncation_psi, noise_mode=noise_mode)
         img = (img.permute(0, 2, 3, 1) * 127.5 + 128).clamp(0, 255).to(torch.uint8)
         PIL.Image.fromarray(img[0].cpu().numpy(), 'RGB').save(f'{outdir}/seed{seed:04d}.png')
+        np.savez(f'{outdir}/w{seed:04d}.npz', w=w_samples)
 
 
 #----------------------------------------------------------------------------
