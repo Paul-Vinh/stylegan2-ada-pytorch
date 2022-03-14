@@ -72,15 +72,13 @@ def generate_images(
     # Generate images.
     for seed_idx, seed in enumerate(seeds):
         print('Generating image for seed %d (%d/%d) ...' % (seed, seed_idx, len(seeds)))
-        w = 3*(2*torch.from_numpy(np.random.RandomState(seed).randn(1, 18, G.z_dim)).to(device)-1)
+        w = torch.from_numpy(np.random.RandomState(seed).rand(1, 18, G.z_dim)).to(device)
         img = G.synthesis(w, noise_mode=noise_mode, force_fp32=True)
         img = (img.permute(0, 2, 3, 1) * 127.5 + 128).clamp(0, 255).to(torch.uint8)
         PIL.Image.fromarray(img[0].cpu().numpy(), 'RGB').save(f'{outdir}/seed{seed:04d}_from_w.png')
-
 
 #----------------------------------------------------------------------------
 
 if __name__ == "__main__":
     generate_images() # pylint: disable=no-value-for-parameter
-
 #----------------------------------------------------------------------------
