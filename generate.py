@@ -32,6 +32,10 @@ def num_range(s: str) -> List[int]:
     vals = s.split(',')
     return [int(x) for x in vals]
 
+def name_files(s: str) -> List[str]:
+    vals = s.strip(',').split(',')
+    return vals
+
 #----------------------------------------------------------------------------
 
 @click.command()
@@ -41,10 +45,10 @@ def num_range(s: str) -> List[int]:
 @click.option('--trunc', 'truncation_psi', type=float, help='Truncation psi', default=1, show_default=True)
 @click.option('--class', 'class_idx', type=int, help='Class label (unconditional if not specified)')
 @click.option('--noise-mode', help='Noise mode', type=click.Choice(['const', 'random', 'none']), default='const', show_default=True)
-@click.option('--projected-w', help='Projection result file', type=str, metavar='FILE')
+@click.option('--projected-w', help='List of vector w')
 @click.option('--outdir', help='Where to save the output images', type=str, required=True, metavar='DIR')
-@click.option('--name', 'name', help='Name of the generated file', type=str,
-                                          default='generated')
+@click.option('--names', 'names', type=name_files, help='List of names for the generated files',
+                                          default=[''])
 def generate_images(
     ctx: click.Context,
     network_pkl: str,
@@ -53,8 +57,8 @@ def generate_images(
     noise_mode: str,
     outdir: str,
     class_idx: Optional[int],
-    projected_w: Optional[str],
-    name: str
+    projected_w: Optional[List[str]],
+    names: Optional[List[str]]
 ):
     """Generate images using pretrained network pickle.
 
@@ -93,13 +97,21 @@ def generate_images(
         if seeds is not None:
             print ('warn: --seeds is ignored when using --projected-w')
         print(f'Generating images from projected W "{projected_w}"')
-        ws = np.load(projected_w)['w']
+        """ws = np.load(projected_w)['w']
         ws = torch.tensor(ws, device=device) # pylint: disable=not-callable
         assert ws.shape[1:] == (G.num_ws, G.w_dim)
         for idx, w in enumerate(ws):
             img = G.synthesis(w.unsqueeze(0), noise_mode=noise_mode)
             img = (img.permute(0, 2, 3, 1) * 127.5 + 128).clamp(0, 255).to(torch.uint8)
             img = PIL.Image.fromarray(img[0].cpu().numpy(), 'RGB').save(f'{outdir}/{name}.png')
+        return"""
+        ws = np.load(projected_w)['w']
+        ws = torch.tensor(ws, device=device)
+        for idx, w in enumerate(ws):
+            print(names[idx])
+            img = G.synthesis(w, noise_mode=noise_mode)
+            img = (img.permute(0, 2, 3, 1) * 127.5 + 128).clamp(0, 255).to(torch.uint8)
+            img = PIL.Image.fromarray(img[0].cpu().numpy(), 'RGB').save(f'{outdir}/{names[idx]}.png')
         return
 
     if seeds is None:
