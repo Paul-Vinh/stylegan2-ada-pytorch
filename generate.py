@@ -48,7 +48,7 @@ def name_files(s: str) -> List[str]:
 @click.option('--projected-w', help='List of vector w')
 @click.option('--outdir', help='Where to save the output images', type=str, required=True, metavar='DIR')
 @click.option('--names', 'names', type=name_files, help='List of names for the generated files',
-                                          default=[''])
+                                          required=False)
 def generate_images(
     ctx: click.Context,
     network_pkl: str,
