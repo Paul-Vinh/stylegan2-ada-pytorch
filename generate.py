@@ -47,7 +47,7 @@ def name_files(s: str) -> List[str]:
 @click.option('--noise-mode', help='Noise mode', type=click.Choice(['const', 'random', 'none']), default='const', show_default=True)
 @click.option('--projected-w', help='List of vector w')
 @click.option('--outdir', help='Where to save the output images', type=str, required=True, metavar='DIR')
-@click.option('--names', 'names', type=name_files, help='List of names for the generated files',
+@click.option('--names', 'names', type=str, help='List of names for the generated files',
                                           required=False)
 def generate_images(
     ctx: click.Context,
@@ -91,28 +91,32 @@ def generate_images(
         G = legacy.load_network_pkl(f)['G_ema'].to(device) # type: ignore
 
     os.makedirs(outdir, exist_ok=True)
-
+    names = names.split('/')
     # Synthesize the result of a W projection.
     if projected_w is not None:
         if seeds is not None:
             print ('warn: --seeds is ignored when using --projected-w')
         print(f'Generating images from projected W "{projected_w}"')
-        """ws = np.load(projected_w)['w']
-        ws = torch.tensor(ws, device=device) # pylint: disable=not-callable
-        assert ws.shape[1:] == (G.num_ws, G.w_dim)
-        for idx, w in enumerate(ws):
-            img = G.synthesis(w.unsqueeze(0), noise_mode=noise_mode)
-            img = (img.permute(0, 2, 3, 1) * 127.5 + 128).clamp(0, 255).to(torch.uint8)
-            img = PIL.Image.fromarray(img[0].cpu().numpy(), 'RGB').save(f'{outdir}/{name}.png')
-        return"""
-        ws = np.load(projected_w)['w']
-        ws = torch.tensor(ws, device=device)
-        for idx, w in enumerate(ws):
-            print(names[idx])
-            img = G.synthesis(w, noise_mode=noise_mode)
-            img = (img.permute(0, 2, 3, 1) * 127.5 + 128).clamp(0, 255).to(torch.uint8)
-            img = PIL.Image.fromarray(img[0].cpu().numpy(), 'RGB').save(f'{outdir}/{names[idx]}.png')
-        return
+        print(names)
+        if len(names) == 1:
+            name = names[0]
+            ws = np.load(projected_w)['w']
+            ws = torch.tensor(ws, device=device) # pylint: disable=not-callable
+            assert ws.shape[1:] == (G.num_ws, G.w_dim)
+            for idx, w in enumerate(ws):
+                img = G.synthesis(w.unsqueeze(0), noise_mode=noise_mode)
+                img = (img.permute(0, 2, 3, 1) * 127.5 + 128).clamp(0, 255).to(torch.uint8)
+                img = PIL.Image.fromarray(img[0].cpu().numpy(), 'RGB').save(f'{outdir}/{name}.png')
+            return
+        else:
+            ws = np.load(projected_w)['w']
+            ws = torch.tensor(ws, device=device)
+            for idx, w in enumerate(ws):
+                print(names[idx])
+                img = G.synthesis(w, noise_mode=noise_mode)
+                img = (img.permute(0, 2, 3, 1) * 127.5 + 128).clamp(0, 255).to(torch.uint8)
+                img = PIL.Image.fromarray(img[0].cpu().numpy(), 'RGB').save(f'{outdir}/{names[idx]}.png')
+            return
 
     if seeds is None:
         ctx.fail('--seeds option is required when not using --projected-w')
