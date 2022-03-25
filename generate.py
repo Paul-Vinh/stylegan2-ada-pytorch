@@ -91,13 +91,13 @@ def generate_images(
         G = legacy.load_network_pkl(f)['G_ema'].to(device) # type: ignore
 
     os.makedirs(outdir, exist_ok=True)
-    names = names.split('/')
+    
     # Synthesize the result of a W projection.
     if projected_w is not None:
         if seeds is not None:
             print ('warn: --seeds is ignored when using --projected-w')
         print(f'Generating images from projected W "{projected_w}"')
-        print(names)
+        names = names.split('/')
         if len(names) == 1:
             name = names[0]
             ws = np.load(projected_w)['w']
